@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "lock_id": "blake3:bff146ac2e9038e2234eaae4cfa34c63804034def14e5020ff9ac0ccda8c3463",
+  "features": {},
+  "resolution": {
+    "closure": {
+      "kind": "runtime_closure",
+      "status": "complete",
+      "inputs": [
+        {
+          "kind": "oci-image",
+          "name": "desktop",
+          "digest": "sha256:ba128158ab168ee563351e28f67e56c39cfb6a678d0c983f854e63257262a142"
+        }
+      ]
+    },
+    "oci_images": {
+      "desktop": {
+        "declared_ref": "ghcr.io/koh0920/ossm-vol1-lab@sha256:ba128158ab168ee563351e28f67e56c39cfb6a678d0c983f854e63257262a142",
+        "resolved_digest": "sha256:ba128158ab168ee563351e28f67e56c39cfb6a678d0c983f854e63257262a142",
+        "platform": {
+          "os": "linux",
+          "architecture": "amd64"
+        }
+      }
+    },
+    "resolved_targets": [
+      {
+        "cmd": [],
+        "compatible": true,
+        "component": null,
+        "driver": null,
+        "entrypoint": "",
+        "env": {
+          "DISPLAY": ":1",
+          "HOME": "/home/ato",
+          "XDG_RUNTIME_DIR": "/run/ossm/xdg"
+        },
+        "image": "ghcr.io/koh0920/ossm-vol1-lab@sha256:ba128158ab168ee563351e28f67e56c39cfb6a678d0c983f854e63257262a142",
+        "label": "desktop",
+        "language": null,
+        "port": 3000,
+        "required_env": [],
+        "run_command": null,
+        "runtime": "oci",
+        "runtime_tools": {},
+        "runtime_version": null,
+        "source_layout": null,
+        "working_dir": null
+      }
+    ],
+    "runtime": {
+      "kind": "oci",
+      "resolved_by": "compatibility_target_selection",
+      "selected_target": "desktop"
+    },
+    "target_selection": {
+      "default_target": "desktop",
+      "source": "manifest"
+    }
+  },
+  "contract": {
+    "metadata": {
+      "capsule_type": "app",
+      "default_target": "desktop",
+      "name": "ossm-vol1-lab",
+      "version": "0.1.2"
+    },
+    "network": {
+      "egress_allow": [],
+      "egress_id_allow": []
+    },
+    "process": {
+      "entrypoint": "",
+      "env": {}
+    },
+    "storage": {
+      "state": {
+        "workspace": {
+          "attach": "explicit",
+          "durability": "persistent",
+          "kind": "filesystem",
+          "producer": null,
+          "purpose": "OSSM Vol.1 design workspace",
+          "schema_id": "sha256:1d09e3e8ffc2e2a59b0bb9d94a4c4e39677df47505313fbd5b0e90ec23419a62",
+          "sharing": "exclusive"
+        }
+      },
+      "volumes": []
+    },
+    "workloads": [
+      {
+        "depends_on": [],
+        "name": "main",
+        "process": {
+          "entrypoint": "",
+          "env": {}
+        },
+        "readiness_probe": {
+          "exec": null,
+          "http_get": "/healthz",
+          "initial_delay_seconds": 5,
+          "interval_seconds": 2,
+          "port": "3000",
+          "tcp_connect": null,
+          "timeout_seconds": 120
+        },
+        "target": "desktop"
+      }
+    ]
+  },
+  "binding": {},
+  "policy": {},
+  "attestations": {}
+}

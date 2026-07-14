@@ -1,6 +1,6 @@
 schema_version = "0.3"
 name = "ossm-vol1-lab"
-version = "0.1.1"
+version = "0.1.2"
 type = "app"
 default_target = "desktop"
 

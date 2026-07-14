@@ -105,7 +105,10 @@ const outputPath = resolve(outputArgument);
 const workDir = resolve(projectRoot, ".tmp", "release-capsule");
 const manifest = readFileSync(resolve(projectRoot, "capsule.toml"));
 const lock = readFileSync(resolve(projectRoot, "capsule.lock.json"));
+const atoLock = readFileSync(resolve(projectRoot, "ato.lock.json"));
 const readme = readFileSync(resolve(projectRoot, "README.md"));
+const version = manifest.toString("utf8").match(/^version\s*=\s*"([^"]+)"/m)?.[1];
+if (!version) fail("capsule.toml must declare a version");
 const key = JSON.parse(readFileSync(resolve(keyArgument), "utf8"));
 const secretKey = Buffer.from(key.secret_key, "base64");
 const publicKey = Buffer.from(key.public_key, "base64");
@@ -138,7 +141,7 @@ const sbom = Buffer.from(
     },
     dataLicense: "CC0-1.0",
     documentNamespace: `https://ato.run/spdx/ossm-vol1-lab/${sha256(manifest).slice(7)}`,
-    name: "ossm-vol1-lab-0.1.0",
+    name: `ossm-vol1-lab-${version}`,
     packages: [],
     spdxVersion: "SPDX-2.3",
   }),
@@ -176,6 +179,7 @@ writeFileSync(
   outputPath,
   createTar([
     { path: "capsule.toml", data: manifest },
+    { path: "ato.lock.json", data: atoLock },
     { path: "capsule.lock.json", data: lock },
     { path: "sbom.spdx.json", data: sbom },
     { path: "signature.json", data: signatureJson },

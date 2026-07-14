@@ -34,6 +34,17 @@ The Docker context excludes `capsule.toml`, lock files, docs, tests, and Git
 metadata. The Dockerfile uses explicit `COPY` statements. Updating the image
 digest in `capsule.toml` therefore cannot trigger or change the image build.
 
+`ato.lock.json` is the canonical resolved execution contract.
+`capsule.lock.json` remains in release archives only as a legacy archive
+verification input. Release packaging requires `SOURCE_DATE_EPOCH`, embeds an
+Ed25519 archive-boundary signature, and emits a populated SPDX 2.3 SBOM. A
+second detached signature authenticates the immutable GitHub Release asset;
+detached signing must not alter the capsule SHA-256.
+
+The declared 10 GB disk requirement includes the OCI image, container writable
+layer, persistent workspace, and temporary space needed while creating or
+restoring a ready-state snapshot.
+
 ## Process model
 
 `tini` starts supervisord. Processes are ordered as Xvnc, dbus/XFCE,
@@ -69,4 +80,3 @@ to a temporary file, computes SHA-256, and atomically replaces
 7. Different users cannot observe each other's workspace.
 8. VNC and websockify are not externally reachable.
 9. Updating `capsule.toml` with the GHCR digest does not rebuild the image.
-

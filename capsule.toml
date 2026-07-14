@@ -1,6 +1,6 @@
 schema_version = "0.3"
 name = "ossm-vol1-lab"
-version = "0.1.2"
+version = "0.1.3"
 type = "app"
 default_target = "desktop"
 
@@ -14,7 +14,7 @@ author = "koh0920"
 tags = ["semiconductor", "eda", "xschem", "ngspice", "klayout"]
 
 [requirements]
-disk = "5GB"
+disk = "10GB"
 
 [targets.desktop]
 runtime = "oci"

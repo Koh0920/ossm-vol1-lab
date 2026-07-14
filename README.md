@@ -25,19 +25,37 @@ ato lock .
 ato build .
 ```
 
+`ato.lock.json` is the canonical resolved execution contract and pins the OCI
+image used by Ato. `capsule.lock.json` is retained only for compatibility with
+the current archive verifier; it must not be used as runtime resolution input.
+The capsule requests 10 GB of runner disk so the OCI image, writable layer,
+workspace state, and snapshot staging area have explicit headroom.
+
 ## GitHub Source release artifact
 
-The Store imports releases from GitHub Source. Build the small signed recipe
-artifact below; the OCI image remains external and digest-pinned in
-`capsule.toml`.
+The Store imports releases from GitHub Source. The release uses two signatures
+with separate responsibilities:
+
+- embedded `signature.json` authenticates `capsule.toml` and
+  `payload.tar.zst` at the capsule archive boundary;
+- detached `.capsule.sig`, produced by `ato sign`, authenticates the immutable
+  GitHub Release asset for GitHub Source verification.
+
+Detached signing never mutates the capsule. The recipe artifact remains small;
+the OCI image stays external and digest-pinned in `capsule.toml`. Packaging also
+writes a standalone `.sbom.spdx.json` release asset containing the OCI/base
+image digests, pinned Ubuntu packages, and upstream PDK commits.
 
 ```bash
 SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)" \
   node scripts/package-release-capsule.mjs \
-  .tmp/ossm-vol1-lab-0.1.2-linux-amd64.capsule \
+  .tmp/ossm-vol1-lab-0.1.3-linux-amd64.capsule \
   ~/.ato/keys/publisher-signing-key.json
 ato sign --key ~/.ato/keys/publisher-signing-key.json \
-  .tmp/ossm-vol1-lab-0.1.2-linux-amd64.capsule
+  .tmp/ossm-vol1-lab-0.1.3-linux-amd64.capsule
+
+scripts/test-release-reproducibility.sh \
+  ~/.ato/keys/publisher-signing-key.json
 ```
 
 See `docs/rfcs/draft/OSSM_VOL1_LAB_SPEC.md` for the complete contract and

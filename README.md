@@ -25,6 +25,21 @@ ato lock .
 ato build .
 ```
 
+## GitHub Source release artifact
+
+The Store imports releases from GitHub Source. Build the small signed recipe
+artifact below; the OCI image remains external and digest-pinned in
+`capsule.toml`.
+
+```bash
+SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)" \
+  node scripts/package-release-capsule.mjs \
+  .tmp/ossm-vol1-lab-0.1.0-linux-amd64.capsule \
+  ~/.ato/keys/publisher-signing-key.json
+ato sign --key ~/.ato/keys/publisher-signing-key.json \
+  .tmp/ossm-vol1-lab-0.1.0-linux-amd64.capsule
+```
+
 See `docs/rfcs/draft/OSSM_VOL1_LAB_SPEC.md` for the complete contract and
 acceptance criteria.
 

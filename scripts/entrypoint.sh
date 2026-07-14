@@ -7,7 +7,9 @@ umask 077
 # import starts the image entrypoint as root and lets supervisord drop to `ato`.
 # Fresh tmpfs mounts are root-owned, so normalize only the writable runtime
 # surfaces before that privilege drop. Immutable image content stays untouched.
+started_as_root=false
 if [[ "$(id -u)" == "0" ]]; then
+  started_as_root=true
   install -d -o 1000 -g 1000 -m 0755 /run/ossm
   install -d -o 1000 -g 1000 -m 0700 \
     "$XDG_RUNTIME_DIR" \
@@ -42,6 +44,18 @@ if [[ ! -e "$OSSM_WORKSPACE/.ossm-workspace-v1" ]]; then
 fi
 
 cp "$OSSM_ROOT/templates/WORKSPACE_README.md" "$OSSM_WORKSPACE/README.md"
+
+# Root-started imports create the mutable config, launcher, and workspace seed
+# from root-owned image templates. Transfer the completed trees only after all
+# copy operations so the uid 1000 desktop can update simulations and exports.
+if [[ "$started_as_root" == "true" ]]; then
+  chown -R 1000:1000 \
+    "$HOME/.xschem" \
+    "$HOME/.klayout" \
+    "$HOME/Desktop" \
+    "$OSSM_WORKSPACE"
+fi
+
 rm -f /run/ossm/desktop-ready
 
 exec /usr/bin/supervisord -n -c "$OSSM_ROOT/supervisor/supervisord.conf"

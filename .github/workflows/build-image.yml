@@ -102,6 +102,12 @@ jobs:
           done
           curl --fail http://127.0.0.1:3000/healthz
           test "$(docker exec ossm-lab-root-tmpfs stat -c '%u:%g' /run/ossm /home/ato /foss/designs | sort -u)" = "1000:1000"
+          docker exec --user 1000:1000 ossm-lab-root-tmpfs labctl doctor --full
+          docker exec --user 1000:1000 ossm-lab-root-tmpfs labctl export
+          curl --fail --output .tmp/downloads/root-latest.zip http://127.0.0.1:3000/downloads/latest.zip
+          curl --fail --output .tmp/downloads/root-latest.zip.sha256 http://127.0.0.1:3000/downloads/latest.zip.sha256
+          sed 's/latest.zip/root-latest.zip/' .tmp/downloads/root-latest.zip.sha256 > .tmp/downloads/root-latest.expected.sha256
+          (cd .tmp/downloads && sha256sum --check root-latest.expected.sha256)
 
       - name: Authenticate to GHCR
         if: github.event_name != 'pull_request'

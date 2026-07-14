@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "lock_id": "blake3:546e40660dfa846b41a051c63c200f80aa59c68022165f3fe08f8a227e571961",
+  "lock_id": "blake3:d29a84972f6fdc85cd9e0768b35470a2082adf1457d7cd18b0776a8eba57b2ad",
   "features": {},
   "resolution": {
     "closure": {
       "inputs": [
         {
-          "digest": "sha256:ba128158ab168ee563351e28f67e56c39cfb6a678d0c983f854e63257262a142",
+          "digest": "sha256:885860a193392497750e29035692833b1ea13910d64cb4818265670b26d3b39e",
           "kind": "oci-image",
           "name": "desktop"
         }
@@ -16,12 +16,12 @@
     },
     "oci_images": {
       "desktop": {
-        "declared_ref": "ghcr.io/koh0920/ossm-vol1-lab@sha256:ba128158ab168ee563351e28f67e56c39cfb6a678d0c983f854e63257262a142",
+        "declared_ref": "ghcr.io/koh0920/ossm-vol1-lab@sha256:885860a193392497750e29035692833b1ea13910d64cb4818265670b26d3b39e",
         "platform": {
           "architecture": "amd64",
           "os": "linux"
         },
-        "resolved_digest": "sha256:ba128158ab168ee563351e28f67e56c39cfb6a678d0c983f854e63257262a142"
+        "resolved_digest": "sha256:885860a193392497750e29035692833b1ea13910d64cb4818265670b26d3b39e"
       }
     },
     "resolved_targets": [
@@ -36,7 +36,7 @@
           "HOME": "/home/ato",
           "XDG_RUNTIME_DIR": "/run/ossm/xdg"
         },
-        "image": "ghcr.io/koh0920/ossm-vol1-lab@sha256:ba128158ab168ee563351e28f67e56c39cfb6a678d0c983f854e63257262a142",
+        "image": "ghcr.io/koh0920/ossm-vol1-lab@sha256:885860a193392497750e29035692833b1ea13910d64cb4818265670b26d3b39e",
         "label": "desktop",
         "language": null,
         "port": 3000,
@@ -64,7 +64,7 @@
       "capsule_type": "app",
       "default_target": "desktop",
       "name": "ossm-vol1-lab",
-      "version": "0.1.3"
+      "version": "0.1.4"
     },
     "network": {
       "egress_allow": [],

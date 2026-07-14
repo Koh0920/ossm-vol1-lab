@@ -52,6 +52,7 @@ RUN test "${TARGETARCH:-amd64}" = "amd64" \
       zip=3.0-13ubuntu0.2 \
       unzip=6.0-28ubuntu4.1 \
       fonts-noto-cjk=1:20230817+repack1-3 \
+      librsvg2-common=2.58.0+dfsg-1build1 \
       ristretto=0.13.1-1build2 \
     && locale-gen ja_JP.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
@@ -111,7 +112,8 @@ RUN chmod 0755 /opt/ossm/scripts/* \
       /opt/ossm/immutable/home/.klayout/salt/OpenRule1um/tech/tech/drc/drc.lydrc \
       /opt/ossm/immutable/openrule.drc \
     && chown -R ato:ato /opt/ossm /home/ato /run/ossm /foss/designs \
-    && ln -s /opt/ossm/scripts/labctl /usr/local/bin/labctl
+    && ln -s /opt/ossm/scripts/labctl /usr/local/bin/labctl \
+    && ln -s /usr/bin/netgen-lvs /usr/local/bin/netgen
 
 USER 1000:1000
 WORKDIR /foss/designs

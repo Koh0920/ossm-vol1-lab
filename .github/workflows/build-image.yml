@@ -82,6 +82,26 @@ jobs:
           curl --fail --output .tmp/downloads/latest.zip.sha256 http://127.0.0.1:3000/downloads/latest.zip.sha256
           (cd .tmp/downloads && sha256sum --check latest.zip.sha256)
           test "$(docker port ossm-lab | wc -l)" -eq 1
+          docker rm -f ossm-lab
+
+          # Ready-State compose import launches the image entrypoint as root on
+          # fresh root-owned tmpfs surfaces, then supervisord drops to uid 1000.
+          # Exercise that exact ownership transition before publishing the image.
+          docker run -d --name ossm-lab-root-tmpfs \
+            --platform linux/amd64 \
+            --user 0:0 \
+            -p 127.0.0.1:3000:3000 \
+            --tmpfs /run/ossm:rw,nosuid,size=64m \
+            --tmpfs /home/ato:rw,nosuid,size=256m \
+            --tmpfs /foss/designs:rw,nosuid,size=512m \
+            "$IMAGE:sha-$GITHUB_SHA"
+          trap 'docker logs ossm-lab-root-tmpfs; docker rm -f ossm-lab-root-tmpfs' EXIT
+          for attempt in $(seq 1 120); do
+            curl --fail --silent http://127.0.0.1:3000/healthz && break
+            sleep 1
+          done
+          curl --fail http://127.0.0.1:3000/healthz
+          test "$(docker exec ossm-lab-root-tmpfs stat -c '%u:%g' /run/ossm /home/ato /foss/designs | sort -u)" = "1000:1000"
 
       - name: Authenticate to GHCR
         if: github.event_name != 'pull_request'

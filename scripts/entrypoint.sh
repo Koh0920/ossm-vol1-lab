@@ -2,7 +2,25 @@
 set -euo pipefail
 
 umask 077
-install -d -m 0700 "$XDG_RUNTIME_DIR" "$HOME/.config" "$OSSM_WORKSPACE"
+
+# The OCI runtime normally enters as uid/gid 1000, while Ready-State compose
+# import starts the image entrypoint as root and lets supervisord drop to `ato`.
+# Fresh tmpfs mounts are root-owned, so normalize only the writable runtime
+# surfaces before that privilege drop. Immutable image content stays untouched.
+if [[ "$(id -u)" == "0" ]]; then
+  install -d -o 1000 -g 1000 -m 0755 /run/ossm
+  install -d -o 1000 -g 1000 -m 0700 \
+    "$XDG_RUNTIME_DIR" \
+    "$HOME" \
+    "$HOME/.config" \
+    "$OSSM_WORKSPACE"
+  # supervisord re-opens /dev/fd/{1,2} after dropping to `ato`. Ready-State's
+  # guest agent creates those backing log files as root, so hand ownership of
+  # the inherited output descriptors to the runtime uid as well.
+  chown 1000:1000 "/proc/$$/fd/1" "/proc/$$/fd/2" 2>/dev/null || true
+else
+  install -d -m 0700 "$XDG_RUNTIME_DIR" "$HOME/.config" "$OSSM_WORKSPACE"
+fi
 
 rm -rf "$HOME/.xschem" "$HOME/.klayout"
 cp -a "$OSSM_ROOT/immutable/home/.xschem" "$HOME/.xschem"

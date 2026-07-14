@@ -18,7 +18,7 @@ disk = "5GB"
 
 [targets.desktop]
 runtime = "oci"
-image = "ghcr.io/koh0920/ossm-vol1-lab:bootstrap"
+image = "ghcr.io/koh0920/ossm-vol1-lab@sha256:ba128158ab168ee563351e28f67e56c39cfb6a678d0c983f854e63257262a142"
 port = 3000
 user = "1000:1000"
 env = { DISPLAY = ":1", HOME = "/home/ato", XDG_RUNTIME_DIR = "/run/ossm/xdg" }

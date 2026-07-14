@@ -1,6 +1,5 @@
 .ato/
 .tmp/
 *.capsule
-capsule.lock.json
 __pycache__/
 *.py[cod]

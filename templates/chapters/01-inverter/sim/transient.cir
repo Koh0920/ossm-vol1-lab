@@ -1,0 +1,16 @@
+PTC06 CMOS inverter transient response
+.include /home/ato/.xschem/lib/mos.lib
+VDD vdd 0 5
+VIN in 0 PULSE(0 5 10n 1n 1n 40n 100n)
+M1 out in vdd vdd pmos W=3.3u L=1.0u
+M2 out in 0 0 nmos W=2.0u L=1.0u
+CLOAD out 0 10f
+.control
+set wr_singlescale
+set wr_vecnames
+tran 0.2n 200n
+wrdata /foss/designs/runs/transient.dat v(out)
+quit
+.endc
+.end
+

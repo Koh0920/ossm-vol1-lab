@@ -1,0 +1,5 @@
+.ato/
+.tmp/
+*.capsule
+capsule.lock.json
+

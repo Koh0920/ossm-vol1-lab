@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=6. Run LVS
+Exec=xfce4-terminal --hold -e "labctl check lvs"
+Terminal=false
+Icon=emblem-default
+

@@ -1,0 +1,52 @@
+schema_version = "0.3"
+name = "ossm-vol1-lab"
+version = "0.1.0"
+type = "app"
+default_target = "desktop"
+
+[source]
+repository = "Koh0920/ossm-vol1-lab"
+
+[metadata]
+display_name = "Open Source Silicon Magazine Vol.1 Lab"
+description = "Browser-based CMOS inverter design lab using open-source EDA tools"
+author = "koh0920"
+tags = ["semiconductor", "eda", "xschem", "ngspice", "klayout"]
+
+[requirements]
+disk = "5GB"
+
+[targets.desktop]
+runtime = "oci"
+image = "ghcr.io/koh0920/ossm-vol1-lab:bootstrap"
+port = 3000
+user = "1000:1000"
+env = { DISPLAY = ":1", HOME = "/home/ato", XDG_RUNTIME_DIR = "/run/ossm/xdg" }
+
+[state.workspace]
+kind = "filesystem"
+durability = "persistent"
+purpose = "OSSM Vol.1 design workspace"
+attach = "explicit"
+sharing = "exclusive"
+schema_id = "sha256:1d09e3e8ffc2e2a59b0bb9d94a4c4e39677df47505313fbd5b0e90ec23419a62"
+
+[services.main]
+target = "desktop"
+readiness_probe = { http_get = "/healthz", port = "3000", initial_delay_seconds = 5, timeout_seconds = 120 }
+
+[[services.main.state_bindings]]
+state = "workspace"
+target = "/foss/designs"
+owner = { uid = 1000, gid = 1000 }
+mode = "0700"
+
+[network]
+egress_allow = []
+egress_id_allow = []
+
+[isolation]
+allow_env = []
+
+[store]
+playground = true

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=4. Open inverter layout
+Exec=labctl layout open
+Terminal=false
+Icon=applications-graphics
+

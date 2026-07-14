@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=1. Open inverter schematic
+Exec=labctl schematic open
+Terminal=false
+Icon=applications-engineering
+

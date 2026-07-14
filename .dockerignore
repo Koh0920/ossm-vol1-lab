@@ -1,0 +1,12 @@
+capsule.toml
+capsule.lock.json
+.ato/
+docs/
+.git/
+.github/
+tests/
+README.md
+LICENSE
+LICENSES/
+schemas/
+

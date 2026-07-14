@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT=${OSSM_ROOT:-/opt/ossm}
+WORKSPACE=${OSSM_WORKSPACE:-/foss/designs}
+CHAPTER="$WORKSPACE/chapters/01-inverter"
+RUNS="$WORKSPACE/runs"
+EXPORTS="$WORKSPACE/exports"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  labctl doctor [--full]
+  labctl schematic open
+  labctl simulate dc|transient
+  labctl layout open
+  labctl check drc|lvs [--negative]
+  labctl export
+  labctl reset --chapter 01-inverter [--backup]
+EOF
+}
+
+notify() {
+  if [[ -n "${DISPLAY:-}" ]] && command -v notify-send >/dev/null; then
+    notify-send "OSSM Vol.1 Lab" "$1" || true
+  fi
+  printf '%s\n' "$1"
+}
+
+doctor() {
+  local full=${1:-}
+  local failed=0
+  for command in xschem ngspice klayout netgen zip python3; do
+    if ! command -v "$command" >/dev/null; then
+      echo "missing command: $command" >&2
+      failed=1
+    fi
+  done
+  [[ -w "$WORKSPACE" ]] || { echo "workspace is not writable" >&2; failed=1; }
+  grep -q '^openrule1um=7b3c4c4d8feca8e94388bb856a42ee4caf8f8763$' \
+    "$ROOT/immutable/PDK_COMMITS" || { echo "PDK marker mismatch" >&2; failed=1; }
+  [[ $failed -eq 0 ]] || return 1
+
+  if [[ "$full" == "--full" ]]; then
+    xdpyinfo -display "${DISPLAY:-:1}" >/dev/null
+    "$ROOT/scripts/websocket_smoke.py" 127.0.0.1 6080
+    simulate dc false
+    "$ROOT/scripts/check-gds.sh" "$CHAPTER/inverter.gds"
+  fi
+  echo "doctor: ok${full:+ (full)}"
+}
+
+simulate() {
+  local kind=$1
+  local show=${2:-true}
+  local netlist output svg
+  case "$kind" in
+    dc)
+      netlist="$CHAPTER/sim/dc.cir"
+      output="$RUNS/dc.dat"
+      svg="$RUNS/dc-waveform.svg"
+      ;;
+    transient)
+      netlist="$CHAPTER/sim/transient.cir"
+      output="$RUNS/transient.dat"
+      svg="$RUNS/transient-waveform.svg"
+      ;;
+    *)
+      echo "unknown simulation: $kind" >&2
+      return 2
+      ;;
+  esac
+  install -d -m 0700 "$RUNS"
+  rm -f "$output" "$svg"
+  ngspice -b -o "$RUNS/$kind.log" "$netlist"
+  test -s "$output"
+  "$ROOT/scripts/render-waveform.py" "$kind" "$output" "$svg"
+  test -s "$svg"
+  notify "$kind simulation completed: $svg"
+  if [[ "$show" == "true" && -n "${DISPLAY:-}" ]]; then
+    ristretto "$svg" >/dev/null 2>&1 &
+  fi
+}
+
+export_workspace() {
+  local count bytes stamp part digest_tmp
+  install -d -m 0700 "$EXPORTS"
+  if ! mkdir /run/ossm/export.lock 2>/dev/null; then
+    echo "an export is already running" >&2
+    return 1
+  fi
+  trap 'rm -rf /run/ossm/export.lock' RETURN
+
+  if find "$WORKSPACE/chapters" "$WORKSPACE/projects" "$WORKSPACE/runs" -type l -print -quit | grep -q .; then
+    echo "exports reject symbolic links" >&2
+    return 1
+  fi
+  count=$(find "$WORKSPACE/chapters" "$WORKSPACE/projects" "$WORKSPACE/runs" -type f | wc -l | tr -d ' ')
+  bytes=$(du -sk "$WORKSPACE/chapters" "$WORKSPACE/projects" "$WORKSPACE/runs" | awk '{sum += $1} END {print sum * 1024}')
+  (( count <= 5000 )) || { echo "export exceeds 5000 files" >&2; return 1; }
+  (( bytes <= 536870912 )) || { echo "export exceeds 512 MiB" >&2; return 1; }
+
+  stamp=$(date -u +%Y%m%dT%H%M%SZ)
+  part="$EXPORTS/.latest-$stamp.zip"
+  digest_tmp="$EXPORTS/.latest-$stamp.sha256"
+  (
+    cd "$WORKSPACE"
+    zip -q -r "$part" chapters projects runs README.md
+  )
+  (( $(stat -c '%s' "$part") <= 268435456 )) || { rm -f "$part"; echo "ZIP exceeds 256 MiB" >&2; return 1; }
+  sha256sum "$part" | awk '{print $1 "  latest.zip"}' > "$digest_tmp"
+  mv -f "$part" "$EXPORTS/latest.zip"
+  mv -f "$digest_tmp" "$EXPORTS/latest.zip.sha256"
+  notify "Export ready: /downloads/latest.zip"
+}
+
+reset_chapter() {
+  local chapter="" backup=false
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --chapter) chapter=${2:-}; shift 2 ;;
+      --backup) backup=true; shift ;;
+      *) echo "unknown reset option: $1" >&2; return 2 ;;
+    esac
+  done
+  [[ "$chapter" == "01-inverter" ]] || { echo "--chapter 01-inverter is required" >&2; return 2; }
+  if pgrep -af 'xschem|klayout' | grep -F "$WORKSPACE/chapters/$chapter" >/dev/null; then
+    echo "close Xschem/KLayout files for $chapter before reset" >&2
+    return 1
+  fi
+  if [[ "$backup" == true && -d "$WORKSPACE/chapters/$chapter" ]]; then
+    cp -a "$WORKSPACE/chapters/$chapter" "$WORKSPACE/chapters/$chapter.backup-$(date -u +%Y%m%dT%H%M%SZ)"
+  fi
+  rm -rf "$WORKSPACE/chapters/$chapter"
+  install -d -m 0700 "$WORKSPACE/chapters/$chapter"
+  cp -a "$ROOT/upstream-templates/chapters/$chapter/." "$WORKSPACE/chapters/$chapter/"
+  cp -a "$ROOT/templates/chapters/$chapter/." "$WORKSPACE/chapters/$chapter/"
+  notify "Reset completed: $chapter"
+}
+
+case "${1:-}" in
+  doctor) shift; doctor "${1:-}" ;;
+  schematic)
+    [[ "${2:-}" == "open" ]] || { usage; exit 2; }
+    xschem "$CHAPTER/inverter.sch" >/dev/null 2>&1 &
+    ;;
+  simulate) simulate "${2:-}" ;;
+  layout)
+    [[ "${2:-}" == "open" ]] || { usage; exit 2; }
+    klayout "$CHAPTER/inverter.gds" >/dev/null 2>&1 &
+    ;;
+  check)
+    case "${2:-}" in
+      drc) "$ROOT/scripts/run-drc.sh" "$CHAPTER/inverter.gds" "${3:-}" ;;
+      lvs) "$ROOT/scripts/run-lvs.sh" "$CHAPTER/lvs" "${3:-}" ;;
+      *) usage; exit 2 ;;
+    esac
+    ;;
+  export) export_workspace ;;
+  reset) shift; reset_chapter "$@" ;;
+  *) usage; exit 2 ;;
+esac
+

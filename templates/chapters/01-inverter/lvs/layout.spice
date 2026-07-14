@@ -1,0 +1,5 @@
+.subckt inverter A Q VDD VSS
+M2 Q A VSS VSS nmos W=2.0u L=1.0u
+M1 Q A VDD VDD pmos W=3.3u L=1.0u
+.ends inverter
+

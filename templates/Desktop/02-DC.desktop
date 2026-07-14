@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=2. Run DC simulation
+Exec=xfce4-terminal --hold -e "labctl simulate dc"
+Terminal=false
+Icon=utilities-system-monitor
+

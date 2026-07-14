@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=7. Export workspace ZIP
+Exec=xfce4-terminal --hold -e "labctl export"
+Terminal=false
+Icon=document-save
+

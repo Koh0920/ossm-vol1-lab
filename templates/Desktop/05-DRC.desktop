@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=5. Run DRC
+Exec=xfce4-terminal --hold -e "labctl check drc"
+Terminal=false
+Icon=emblem-default
+

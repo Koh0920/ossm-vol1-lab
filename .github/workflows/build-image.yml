@@ -62,7 +62,7 @@ jobs:
           docker run -d --name ossm-lab \
             --platform linux/amd64 \
             --user 1000:1000 \
-            -p 3000:3000 \
+            -p 127.0.0.1:3000:3000 \
             -v "$PWD/.tmp/workspace:/foss/designs" \
             "$IMAGE:sha-$GITHUB_SHA"
           trap 'docker logs ossm-lab; docker rm -f ossm-lab' EXIT
@@ -100,4 +100,3 @@ jobs:
           digest=$(awk '/digest:/ {print $3; exit}' .tmp/push.log)
           test -n "$digest"
           echo "Verified digest: \`$IMAGE@$digest\`" >> "$GITHUB_STEP_SUMMARY"
-

@@ -49,10 +49,10 @@ image digests, pinned Ubuntu packages, and upstream PDK commits.
 ```bash
 SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)" \
   node scripts/package-release-capsule.mjs \
-  .tmp/ossm-vol1-lab-0.1.4-linux-amd64.capsule \
+  .tmp/ossm-vol1-lab-0.1.5-linux-amd64.capsule \
   ~/.ato/keys/publisher-signing-key.json
 ato sign --key ~/.ato/keys/publisher-signing-key.json \
-  .tmp/ossm-vol1-lab-0.1.4-linux-amd64.capsule
+  .tmp/ossm-vol1-lab-0.1.5-linux-amd64.capsule
 
 scripts/test-release-reproducibility.sh \
   ~/.ato/keys/publisher-signing-key.json

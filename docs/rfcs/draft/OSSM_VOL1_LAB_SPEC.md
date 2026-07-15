@@ -53,9 +53,17 @@ wait for the prior service instead of treating supervisor start as readiness.
 
 ## Health contract
 
-`GET /healthz` checks supervisor state, internal TCP ports, the desktop-ready
-sentinel, workspace write/delete, required commands, and the expected PDK
-marker. It does not perform a full EDA run.
+`GET /healthz` checks supervisor state, the websockify TCP port, a complete RFB
+3.8 startup handshake through `ServerInit`, the desktop-ready sentinel,
+workspace write/delete, required commands, and the expected PDK marker. A bare
+VNC TCP accept is not ready because Ready-State restore can expose the listener
+before a browser session can complete RFB startup. It does not perform a full
+EDA run.
+
+The web shell retries a failed initial noVNC connection with bounded backoff.
+This covers the short interval between the HTTP readiness response and the
+public WebSocket/RFB route becoming stable; retries stop after connection or a
+fixed attempt cap and never extend the Ato preview lease.
 
 `labctl doctor --full` additionally checks the X session, noVNC WebSocket
 handshake, ngspice batch simulation, PDK files, GDS parsing, and DRC smoke.

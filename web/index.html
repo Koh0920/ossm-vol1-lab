@@ -22,10 +22,68 @@
       <a href="/downloads/latest.zip">成果物ZIP</a>
     </header>
     <iframe
+      id="eda-desktop"
       title="EDA desktop"
       src="/novnc/vnc.html?autoconnect=1&resize=remote&path=websockify&reconnect=1"
       allow="clipboard-read; clipboard-write"
     ></iframe>
+    <script>
+      (() => {
+        const desktop = document.getElementById("eda-desktop");
+        const retryDelaysMs = [2000, 4000, 8000, 12000, 16000];
+        let retryIndex = 0;
+        let retryTimer = null;
+        let monitorTimer = null;
+
+        const clearRetry = () => {
+          if (retryTimer !== null) {
+            clearTimeout(retryTimer);
+            retryTimer = null;
+          }
+        };
+
+        const inspectNoVnc = () => {
+          const frameDocument = desktop.contentDocument;
+          if (!frameDocument) return;
+
+          if (
+            frameDocument.documentElement.classList.contains("noVNC_connected")
+          ) {
+            retryIndex = 0;
+            clearRetry();
+            return;
+          }
+
+          const status = frameDocument.getElementById("noVNC_status");
+          const initialConnectionFailed = status?.classList.contains(
+            "noVNC_status_error",
+          );
+          if (
+            !initialConnectionFailed ||
+            retryTimer !== null ||
+            retryIndex >= retryDelaysMs.length
+          ) {
+            return;
+          }
+
+          const delay = retryDelaysMs[retryIndex++];
+          retryTimer = setTimeout(() => {
+            retryTimer = null;
+            desktop.contentWindow.location.reload();
+          }, delay);
+        };
+
+        desktop.addEventListener("load", () => {
+          if (monitorTimer !== null) clearInterval(monitorTimer);
+          monitorTimer = setInterval(inspectNoVnc, 250);
+          inspectNoVnc();
+        });
+
+        window.addEventListener("beforeunload", () => {
+          clearRetry();
+          if (monitorTimer !== null) clearInterval(monitorTimer);
+        });
+      })();
+    </script>
   </body>
 </html>
-

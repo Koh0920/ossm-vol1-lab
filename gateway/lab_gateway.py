@@ -6,6 +6,7 @@ import os
 import shutil
 import socket
 import stat
+import struct
 import subprocess
 import tempfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -28,6 +29,58 @@ def _tcp_ready(host: str, port: int) -> bool:
         return False
 
 
+def _recv_exact(connection: socket.socket, size: int) -> bytes:
+    data = bytearray()
+    while len(data) < size:
+        chunk = connection.recv(size - len(data))
+        if not chunk:
+            raise ConnectionError("RFB peer closed during readiness handshake")
+        data.extend(chunk)
+    return bytes(data)
+
+
+def _rfb_ready(host: str, port: int) -> bool:
+    """Complete the unauthenticated RFB 3.8 startup handshake.
+
+    A listening TCP port is insufficient after Ready-State restore: Xtigervnc
+    can accept a socket and close it before a browser receives ServerInit. The
+    public noVNC session is usable only after the same handshake reaches a
+    positive framebuffer size.
+    """
+
+    try:
+        with socket.create_connection((host, port), timeout=1.0) as connection:
+            connection.settimeout(1.0)
+            server_version = _recv_exact(connection, 12)
+            if not server_version.startswith(b"RFB 003.") or not server_version.endswith(
+                b"\n"
+            ):
+                return False
+
+            connection.sendall(b"RFB 003.008\n")
+            security_type_count = _recv_exact(connection, 1)[0]
+            if security_type_count == 0:
+                return False
+            security_types = _recv_exact(connection, security_type_count)
+            if 1 not in security_types:  # SecurityType None
+                return False
+
+            connection.sendall(b"\x01")
+            if struct.unpack(">I", _recv_exact(connection, 4))[0] != 0:
+                return False
+
+            connection.sendall(b"\x01")  # shared ClientInit
+            server_init = _recv_exact(connection, 24)
+            width, height = struct.unpack(">HH", server_init[:4])
+            name_length = struct.unpack(">I", server_init[20:24])[0]
+            if name_length > 1_048_576:
+                return False
+            _recv_exact(connection, name_length)
+            return width > 0 and height > 0
+    except (OSError, ConnectionError, struct.error, TimeoutError):
+        return False
+
+
 def _supervisor_states() -> dict[str, str]:
     result = subprocess.run(
         ["supervisorctl", "-c", "/opt/ossm/supervisor/supervisord.conf", "status"],
@@ -46,11 +99,15 @@ def _supervisor_states() -> dict[str, str]:
 
 def health_report() -> tuple[bool, dict[str, object]]:
     states = _supervisor_states()
+    rfb_handshake = _rfb_ready("127.0.0.1", 5901)
     checks: dict[str, object] = {
         "supervisor": {
             name: states.get(name) == "RUNNING" for name in REQUIRED_PROGRAMS
         },
-        "vnc_tcp": _tcp_ready("127.0.0.1", 5901),
+        # Preserve vnc_tcp for existing health consumers while strengthening it
+        # from a bare accept() check to a complete RFB ServerInit handshake.
+        "vnc_tcp": rfb_handshake,
+        "rfb_handshake": rfb_handshake,
         "websockify_tcp": _tcp_ready("127.0.0.1", 6080),
         "desktop_ready": DESKTOP_SENTINEL.is_file(),
         "pdk_marker": PDK_MARKER.is_file()
@@ -76,6 +133,7 @@ def health_report() -> tuple[bool, dict[str, object]]:
         bool(checks[name])
         for name in (
             "vnc_tcp",
+            "rfb_handshake",
             "websockify_tcp",
             "desktop_ready",
             "pdk_marker",
@@ -152,4 +210,3 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     ThreadingHTTPServer(("127.0.0.1", 8000), Handler).serve_forever()
-

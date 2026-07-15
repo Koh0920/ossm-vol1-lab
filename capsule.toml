@@ -1,6 +1,6 @@
 schema_version = "0.3"
 name = "ossm-vol1-lab"
-version = "0.1.5"
+version = "0.1.6"
 type = "app"
 default_target = "desktop"
 
@@ -18,7 +18,7 @@ disk = "10GB"
 
 [targets.desktop]
 runtime = "oci"
-image = "ghcr.io/koh0920/ossm-vol1-lab@sha256:5f90c824b26d56ea1ae93f25136654f8e081b967a00c62dd6d8183ce5e09a6f8"
+image = "ghcr.io/koh0920/ossm-vol1-lab@sha256:4be4552c29ea33ef8d1301c91f212850c2bb7e608884007006b10274ae82980b"
 allow_emulation = true
 port = 3000
 user = "1000:1000"
